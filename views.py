@@ -51,26 +51,31 @@ def send_request(request):
         return HttpResponse('Connection Error')
 
 
-def verify(authority):
-    data = {
-        "MerchantID": settings.MERCHANT,
-        "Amount": amount,
-        "Authority": authority,
-    }
-    data = json.dumps(data)
-    # set content length by data
-    headers = {'accept': 'application/json', 'content-type': 'application/json', 'content-length': str(len(data))}
-    try:
-        response = requests.post(ZP_API_VERIFY, data=data, headers=headers)
-        if response.status_code == 200:
-            response_json = response.json()
-            reference_id = response_json['RefID']
-            if response['Status'] == 100:
-                return HttpResponse(f'successful , RefID: {reference_id}')
-            else:
-                return HttpResponse('Error')
-        return HttpResponse('response failed')
-    except requests.exceptions.Timeout:
-        return HttpResponse('Timeout Error')
-    except requests.exceptions.ConnectionError:
-        return HttpResponse('Connection Error')
+def verify(request):
+    authority = request.GET.get('Authority')
+    status = request.GET.get('Status')
+    if status == 'OK' and authority:
+        data = {
+            "MerchantID": settings.MERCHANT,
+            "Amount": amount,
+            "Authority": authority,
+        }
+        data = json.dumps(data)
+        # set content length by data
+        headers = {'accept': 'application/json', 'content-type': 'application/json', 'content-length': str(len(data))}
+        try:
+            response = requests.post(ZP_API_VERIFY, data=data, headers=headers)
+            if response.status_code == 200:
+                response_json = response.json()
+                reference_id = response_json['RefID']
+                if response['Status'] == 100:
+                    return HttpResponse(f'successful , RefID: {reference_id}')
+                else:
+                    return HttpResponse('Error')
+            return HttpResponse('response failed')
+        except requests.exceptions.Timeout:
+            return HttpResponse('Timeout Error')
+        except requests.exceptions.ConnectionError:
+            return HttpResponse('Connection Error')
+    else:
+        return HttpResponse('Not ok')
